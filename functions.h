@@ -3,6 +3,10 @@
 
 #define MAX_SIZE 5
 
-int findClosestCity(int cityMap[][MAX_SIZE], int currentCity);
+void startRandomTour(int* tour);
+
+int calcTourDistance(int* tour, int graph[MAX_SIZE][MAX_SIZE]);
+
+int generateNewUniqueCity(int currentPossibleTours[MAX_SIZE], int currentCityIndex);
 
 #endif // FUNCIONS_H_
