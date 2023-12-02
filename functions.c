@@ -4,8 +4,6 @@
 #define MAX_SIZE 5
 
 void startRandomTour(int* tour) {
-    srand(5831); //Seed rand
-
     //Fill the array with sequencial values
     for (int i = 0; i < MAX_SIZE; ++i) {
         tour[i] = i;
@@ -27,4 +25,26 @@ int calcTourDistance(int* tour, int graph[MAX_SIZE][MAX_SIZE]) {
     }
     distance += graph[tour[MAX_SIZE - 1]][tour[0]]; // Return to starting city
     return distance;
+}
+
+// Function to generate a new unique city
+int generateNewUniqueCity(int currentPossibleTours[MAX_SIZE], int currentCityIndex) {
+    int newCity;
+    int cityAlreadyUsed;
+
+    do {
+        // Generate a new candidate city
+        newCity = rand() % MAX_SIZE;
+
+        // Check if the candidate city has already been used in the current tour
+        cityAlreadyUsed = 0;
+        for (int k = 0; k < currentCityIndex; ++k) {
+            if (newCity == currentPossibleTours[k]) {
+                cityAlreadyUsed = 1;
+                break;
+            }
+        }
+    } while (cityAlreadyUsed);
+
+    return newCity;
 }

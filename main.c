@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <unistd.h>
 #include <semaphore.h>
 #include <fcntl.h>
@@ -28,39 +29,85 @@ int main()
     int possibleTours[POSSIBLE_TOURS_SIZE][MAX_SIZE];
     int distances[POSSIBLE_TOURS_SIZE];
 
-    // Initialize possible tours with random tours
+    /* Initialize possible tours with random values */
     for (int i = 0; i < POSSIBLE_TOURS_SIZE; ++i) {
         startRandomTour(possibleTours[i]);
         distances[i] = calcTourDistance(possibleTours[i], cityMap);
     }
+    /* -------------------------------------------- */
 
+    /* --- Start Differential Evolution Algo --- */
     for (int generation = 0; generation < MAX_GENERATIONS; ++generation) {
         for (int i = 0; i < POSSIBLE_TOURS_SIZE; ++i) {
-            int targetIndex, mutantIndex1, mutantIndex2;
+            /*
+             * Select three indexes for the crossover process.
+             * AlterIndexes are indexes from other individuals that will be crossed and merged into the targetIndex
+             *
+             * We have to make sure these are different from each other so the same city is not visited more than once.
+             * */
+            int targetIndex, alterIndex1, alterIndex2;
             do {
                 targetIndex = rand() % POSSIBLE_TOURS_SIZE;
-                mutantIndex1 = rand() % POSSIBLE_TOURS_SIZE;
-                mutantIndex2 = rand() % POSSIBLE_TOURS_SIZE;
-            } while (mutantIndex1 == targetIndex || mutantIndex2 == targetIndex || mutantIndex1 == mutantIndex2);
+                alterIndex1 = rand() % POSSIBLE_TOURS_SIZE;
+                alterIndex2 = rand() % POSSIBLE_TOURS_SIZE;
+            } while (alterIndex1 == targetIndex || alterIndex2 == targetIndex || alterIndex1 == alterIndex2);
 
-            // Create a mutant by combining two other individuals
+            /*
+             * Create an altered individual by combining the other two into this one
+             * */
             for (int j = 0; j < MAX_SIZE; ++j) {
+                /*
+                 * Crossover process (where the merging is done):
+                 *
+                 * We want to base our crossover of off a probability, since we don't always want to apply it.
+                 * To make this process work, we generate a double between 0 and 1, and compare it to the CROSSOVER_RATE,
+                 * which is what defines the chances of it to happen.
+                 * If the generated number is lower, than we can apply the crossover.
+                 *
+                 * To eliminate the chances of never applying crossover to a given individual, we have the second part
+                 * of the if statement, which forces the crossover if we are on the last iteration.
+                 * */
                 if (((double)rand() / RAND_MAX) < CROSSOVER_RATE || j == MAX_SIZE - 1) {
-                    possibleTours[i][j] = possibleTours[mutantIndex1][j] + DE_FACTOR * (possibleTours[mutantIndex2][j] - possibleTours[mutantIndex1][j]);
+                    possibleTours[i][j] = possibleTours[alterIndex1][j] + DE_FACTOR * (possibleTours[alterIndex2][j] - possibleTours[alterIndex1][j]);
+                }
+
+                /*
+                 * Repair process:
+                 *
+                 * The crossover process has quite a high chance of merging duplicated values into the individual.
+                 * In this context, we do not want to go through the same city more than once.
+                 *
+                 * To fix this, we can implement a repair logic which checks for duplicated cities and keeps generating
+                 * new ones until they are unique.
+                 * */
+                for (int k = 0; k < j; ++k) {
+                    if (possibleTours[i][j] == possibleTours[i][k]) { // The city is duplicated
+                        possibleTours[i][j] = generateNewUniqueCity(possibleTours[i], j);
+                        k = -1; // Check again to make sure the new city is also not duplicated
+                    }
                 }
             }
 
-            // Apply mutation
+            // Apply the altering of the values
             for (int j = 0; j < MAX_SIZE; ++j) {
+                /*
+                 * Use a similar logic to the crossover process where we generate a random number between 0 and 1.
+                 * If this is lower than the altering rate (mutation rate), than we apply it to the city.
+                 * */
                 if (((double)rand() / RAND_MAX) < MUTATION_RATE) {
-                    int mutationPoint = rand() % MAX_SIZE;
+                    int mutationPoint = rand() % MAX_SIZE; //Select another city in the tour (random) to swap with current
                     int temp = possibleTours[i][j];
-                    possibleTours[i][j] = possibleTours[i][mutationPoint];
-                    possibleTours[i][mutationPoint] = temp;
+                    possibleTours[i][j] = possibleTours[i][mutationPoint]; //Alter the tour with, perform swap
+                    possibleTours[i][mutationPoint] = temp; //Assign the current city to the mutation point
                 }
             }
 
-            // Clip values to ensure they are valid indices
+            /*
+             * Enforce value check
+             *
+             * This is an "overkill" check to make sure there are no invalid values being stored
+             * in the possible tours
+             * */
             for (int j = 0; j < MAX_SIZE; ++j) {
                 if (possibleTours[i][j] < 0) {
                     possibleTours[i][j] = 0;
@@ -69,29 +116,35 @@ int main()
                 }
             }
 
-            // Calculate the distance of the mutant
+            /* --- Calculate Distance --- */
+            // Calculate the distance of the altered tour
             int mutantDistance = calcTourDistance(possibleTours[i], cityMap);
 
-            // Update the possibleTours if the mutant is better
+            // Update the distance if the altered is better
             if (mutantDistance < distances[i]) {
                 distances[i] = mutantDistance;
             }
+            /* -------------------------- */
+
         }
     }
+    /* ----------------------------------------- */
 
-    // Find the best tour in the final possibleTours
-    int bestIndex = 0;
+
+    /* --- Get the best tour & show the results --- */
+    int bestIndex = 0; // Find the best tour
     for (int i = 1; i < POSSIBLE_TOURS_SIZE; ++i) {
         if (distances[i] < distances[bestIndex]) {
             bestIndex = i;
         }
     }
 
-    // Print the best tour and its distance
+    //Show it
     printf("Best tour: ");
     for (int i = 0; i < MAX_SIZE; ++i) {
-        printf("%d ", possibleTours[bestIndex][i]);
+        printf("%d ", possibleTours[bestIndex][i] + 1);
     }
     printf("\n");
     printf("Distance: %d\n", distances[bestIndex]);
+    /* --------------------------------------------- */
 }
