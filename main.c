@@ -7,6 +7,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <time.h>
 
 #include "functions.c"
 
@@ -19,6 +20,9 @@
 
 int main()
 {
+    //Start log
+    clock_t begin = clock();
+
     /* --- Program Data --- */
     int cityMapSize = MAX_CITY_TEST_SIZE; // Assign fallback size
     int *cityMap = fetchInputFileData(&cityMapSize); // Init program data
@@ -146,4 +150,9 @@ int main()
     printf("\n");
     printf("Distance: %d\n", distances[bestIndex]);
     /* --------------------------------------------- */
+
+    // End log timer
+    clock_t end = clock();
+    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    printf("\nProgram run in %lf seconds.", time_spent);
 }
