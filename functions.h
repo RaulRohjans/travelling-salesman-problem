@@ -1,12 +1,14 @@
 #ifndef FUNCIONS_H_
 #define FUNCIONS_H_
 
-#define MAX_SIZE 5
+void startRandomTour(int* tour, int maxCitySize);
 
-void startRandomTour(int* tour);
+int calcTourDistance(const int* tour, const int *graph, int maxCitySize);
 
-int calcTourDistance(int* tour, int graph[MAX_SIZE][MAX_SIZE]);
+int generateNewUniqueCity(const int *currentPossibleTours, int maxCitySize, int currentCityIndex);
 
-int generateNewUniqueCity(int currentPossibleTours[MAX_SIZE], int currentCityIndex);
+int* loadTestCities(int matrixSize);
+
+int * fetchInputFileData(int *matrixSize);
 
 #endif // FUNCIONS_H_
