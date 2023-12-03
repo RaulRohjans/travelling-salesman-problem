@@ -100,39 +100,17 @@ int* fetchInputFileData(int *matrixSize) {
 
     char ch; // Temp char used for reading
 
-    // Read first char, which corresponds to the size of the matrix
-    if(((ch = fgetc(file)) != EOF)) {
-        *matrixSize = ch - '0'; //Convert to int and save value
-    }
-    else { // File is empty, so end application
-        printf("The input file is invalid!\n");
-        exit(1);
-    }
+    // Read first integer, which corresponds to the size of the matrix
+    fscanf(file, "%d", matrixSize);
 
     // Declare the matrix
     int *cityMap = (int *)malloc(*matrixSize * *matrixSize * sizeof(int));
 
-    // Read file one char at a time
-    int row = 0, col = 0;
-    bool isFirstTime = true;
-    while ((ch = fgetc(file)) != EOF) {
-        if(isFirstTime && ch == '\n') {
-            // It may happen the first char that is read from the file is a \n
-            // Since the first line is dedicated to the matrix size, lets just skip it
-            isFirstTime = false;
-            continue;
+    // Read data from file
+    for (int i = 0; i < *matrixSize; i++) {
+        for (int j = 0; j < *matrixSize; j++) {
+            fscanf(file, "%d", &(*(cityMap + j * *matrixSize + i)));
         }
-        else if(ch == '\n' || row == *matrixSize-1) { // Means we finished reading a row, need to increment the col
-            col++;
-            row = 0;
-            continue;
-        }
-
-        if(!isdigit(ch)) // Skip if its just some blank space, we only want numbers
-            continue;
-
-        *(cityMap + row * *matrixSize + col) = ch - '0';
-        row++;
     }
 
     fclose(file); // Close file stream
